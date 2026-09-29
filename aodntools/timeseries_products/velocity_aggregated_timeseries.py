@@ -3,7 +3,7 @@ import tempfile
 import shutil
 from copy import deepcopy
 
-from  netCDF4 import Dataset, num2date, stringtochar
+from  netCDF4 import Dataset, num2date
 import numpy as np
 import json
 import argparse
@@ -13,7 +13,7 @@ from aodntools import __version__
 import xarray as xr
 
 from aodntools.timeseries_products import aggregated_timeseries as utils
-from aodntools.timeseries_products.common import (NoInputFilesError, check_velocity_file, current_utc_timestamp,
+from aodntools.timeseries_products.common import (NoInputFilesError, check_velocity_file, fixed_width_string_to_char, current_utc_timestamp,
                                                   TIMESTAMP_FORMAT, DATESTAMP_FORMAT)
 
 TEMPLATE_JSON = resource_filename(__name__, 'velocity_aggregated_timeseries_template.json')
@@ -168,8 +168,8 @@ def velocity_aggregated(files_to_agg, site_code, input_dir='', output_dir='./',
             LATITUDE[index] = nc.LATITUDE.values
             LONGITUDE[index] = nc.LONGITUDE.values
             NOMINAL_DEPTH[index] = utils.get_nominal_depth(nc)
-            source_file[index] = stringtochar(np.array(file, dtype='S256'))
-            instrument_id[index] = stringtochar(np.array(utils.get_instrument_id(nc), dtype='S256'))
+            source_file[index] = fixed_width_string_to_char(file)
+            instrument_id[index] = fixed_width_string_to_char(utils.get_instrument_id(nc))
             ## add time offset to the middle of the measuring window, if it exists
             if 'seconds_to_middle_of_measurement' in nc.TIME.attrs:
                 SECONDS_TO_MIDDLE[index] = nc.TIME.seconds_to_middle_of_measurement

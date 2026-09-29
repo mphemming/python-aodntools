@@ -5,7 +5,7 @@ import unittest
 
 import xarray as xr
 
-from aodntools.timeseries_products.common import (check_file, check_velocity_file, get_qc_variable_names,
+from aodntools.timeseries_products.common import (check_file, check_velocity_file, fixed_width_string_to_char, get_qc_variable_names,
                                                   check_imos_flag_conventions, in_water_index, in_water)
 
 TEST_ROOT = os.path.dirname(__file__)
@@ -44,6 +44,15 @@ class TestQCVariableFunctions(unittest.TestCase):
         with xr.open_dataset(AM_FILE) as nc:
             errors = check_imos_flag_conventions(nc)
         self.assertEqual(errors, ['unexpected quality_control_conventions: "WOCE quality control procedure"'])
+
+
+class TestFixedWidthStringToChar(unittest.TestCase):
+    def test_scalar_string_has_fixed_width_character_representation(self):
+        characters = fixed_width_string_to_char('example.nc')
+
+        self.assertEqual(characters.shape, (256,))
+        self.assertEqual(characters.dtype.itemsize, 1)
+        self.assertEqual(characters.tobytes(), b'example.nc' + b'\0' * (256 - len('example.nc')))
 
 
 class TestCheckFile(unittest.TestCase):
