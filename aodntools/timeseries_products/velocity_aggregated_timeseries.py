@@ -3,7 +3,7 @@ import tempfile
 import shutil
 from copy import deepcopy
 
-from  netCDF4 import Dataset, num2date
+from  netCDF4 import Dataset, num2date, stringtochar
 import numpy as np
 import json
 import argparse
@@ -13,7 +13,7 @@ from aodntools import __version__
 import xarray as xr
 
 from aodntools.timeseries_products import aggregated_timeseries as utils
-from aodntools.timeseries_products.common import (NoInputFilesError, check_velocity_file, fixed_width_string_to_char, current_utc_timestamp,
+from aodntools.timeseries_products.common import (NoInputFilesError, check_velocity_file, current_utc_timestamp,
                                                   TIMESTAMP_FORMAT, DATESTAMP_FORMAT)
 
 TEMPLATE_JSON = resource_filename(__name__, 'velocity_aggregated_timeseries_template.json')
@@ -71,8 +71,8 @@ def velocity_aggregated(files_to_agg, site_code, input_dir='', output_dir='./',
     bad_files = {}
 
     # default name for temporary file. It will be renamed at the end
-    fd, temp_outfile = tempfile.mkstemp(suffix='.nc', dir=output_dir)
-    os.close(fd)
+    _, temp_outfile = tempfile.mkstemp(suffix='.nc', dir=output_dir)
+
     ## check files and get total number of flattened obs
     n_obs_total = 0
     for file in files_to_agg:
@@ -168,8 +168,8 @@ def velocity_aggregated(files_to_agg, site_code, input_dir='', output_dir='./',
             LATITUDE[index] = nc.LATITUDE.values
             LONGITUDE[index] = nc.LONGITUDE.values
             NOMINAL_DEPTH[index] = utils.get_nominal_depth(nc)
-            source_file[index] = fixed_width_string_to_char(file)
-            instrument_id[index] = fixed_width_string_to_char(utils.get_instrument_id(nc))
+            source_file[index] = stringtochar(np.array(file, dtype='S256'), encoding='ascii')
+            instrument_id[index] = stringtochar(np.array(utils.get_instrument_id(nc), dtype='S256'), encoding='ascii')
             ## add time offset to the middle of the measuring window, if it exists
             if 'seconds_to_middle_of_measurement' in nc.TIME.attrs:
                 SECONDS_TO_MIDDLE[index] = nc.TIME.seconds_to_middle_of_measurement
@@ -237,7 +237,6 @@ def velocity_aggregated(files_to_agg, site_code, input_dir='', output_dir='./',
                             ("velocity-"+product_type),
                             ('END-'+ time_end_filename), 'C-' + current_utc_timestamp(DATESTAMP_FORMAT)]) + '.nc'
     ncout_path = os.path.join(output_dir, output_name)
-
     shutil.move(temp_outfile, ncout_path)
 
 

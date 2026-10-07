@@ -9,11 +9,11 @@ import tempfile
 
 import numpy as np
 import xarray as xr
-from netCDF4 import Dataset, num2date
+from netCDF4 import Dataset, num2date, stringtochar
 from pkg_resources import resource_filename
 
 from aodntools import __version__
-from aodntools.timeseries_products.common import (NoInputFilesError, check_file, fixed_width_string_to_char, in_water, current_utc_timestamp,
+from aodntools.timeseries_products.common import (NoInputFilesError, check_file, in_water, current_utc_timestamp,
                                                   TIMESTAMP_FORMAT, DATESTAMP_FORMAT)
 
 TEMPLATE_JSON = resource_filename(__name__, 'aggregated_timeseries_template.json')
@@ -210,9 +210,8 @@ def main_aggregator(files_to_agg, var_to_agg, site_code, input_dir='', output_di
     rejected_files = []
 
     # default name for temporary file. It will be renamed at the end
-    fd, temp_outfile = tempfile.mkstemp(suffix='.nc', dir=output_dir)
-    os.close(fd)
-    
+    _, temp_outfile = tempfile.mkstemp(suffix='.nc', dir=output_dir)
+
     ## check files and get total number of flattened obs
     n_obs_total = 0
     for file in files_to_agg:
@@ -288,8 +287,8 @@ def main_aggregator(files_to_agg, var_to_agg, site_code, input_dir='', output_di
             LATITUDE[index] = nc.LATITUDE.values
             LONGITUDE[index] = nc.LONGITUDE.values
             NOMINAL_DEPTH[index] = get_nominal_depth(nc)
-            source_file[index] = fixed_width_string_to_char(file)
-            instrument_id[index] = fixed_width_string_to_char(get_instrument_id(nc))
+            source_file[index] = stringtochar(np.array(file, dtype='S256'), encoding='ascii')
+            instrument_id[index] = stringtochar(np.array(get_instrument_id(nc), dtype='S256'), encoding='ascii')
 
         start = end
 

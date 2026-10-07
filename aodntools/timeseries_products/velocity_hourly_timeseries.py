@@ -8,12 +8,12 @@ from copy import deepcopy
 import numpy as np
 import pandas as pd
 import xarray as xr
-from netCDF4 import Dataset, num2date
+from netCDF4 import Dataset, num2date, stringtochar
 from pkg_resources import resource_filename
 
 import aodntools.timeseries_products.aggregated_timeseries as utils
 from aodntools import __version__
-from aodntools.timeseries_products.common import (NoInputFilesError, check_velocity_file, fixed_width_string_to_char, current_utc_timestamp,
+from aodntools.timeseries_products.common import (NoInputFilesError, check_velocity_file, current_utc_timestamp,
                                                   TIMESTAMP_FORMAT, DATESTAMP_FORMAT)
 
 TEMPLATE_JSON = resource_filename(__name__, 'velocity_hourly_timeseries_template.json')
@@ -58,7 +58,7 @@ def append_resampled_values(nc_cell, ds, slice_start, binning_functions):
     # shift the index forward 30min to centre the bins on the hour
     df_cell.index = df_cell.index + pd.Timedelta(minutes=30)
 
-    df_cell_1H = df_cell.resample('1h')
+    df_cell_1H = df_cell.resample('1H')
     slice_end = len(df_cell_1H) + slice_start
 
     # set binned timestamps
@@ -105,8 +105,8 @@ def velocity_hourly_aggregated(files_to_agg, site_code, input_dir='', output_dir
     chunk_size = 90  ## size in days
 
     ## default name for temporary file. It will be renamed at the end
-    fd, temp_outfile = tempfile.mkstemp(suffix='.nc', dir=output_dir)
-    os.close(fd)
+    _, temp_outfile = tempfile.mkstemp(suffix='.nc', dir=output_dir)
+
     ## check files and get total number of flattened obs
     print("CHECKING FILES...")
     for index, file in enumerate(files_to_agg):
@@ -230,8 +230,8 @@ def velocity_hourly_aggregated(files_to_agg, site_code, input_dir='', output_dir
             LATITUDE[index] = nc.LATITUDE.values
             LONGITUDE[index] = nc.LONGITUDE.values
             NOMINAL_DEPTH[index] = np.array(utils.get_nominal_depth(nc))
-            source_file[index] = fixed_width_string_to_char(file)
-            instrument_id[index] = fixed_width_string_to_char(utils.get_instrument_id(nc))
+            source_file[index] = stringtochar(np.array(file, dtype='S256'), encoding='ascii')
+            instrument_id[index] = stringtochar(np.array(utils.get_instrument_id(nc), dtype='S256'), encoding='ascii')
             ## add time offset to the middle of the measuring window, if it exists
             if 'seconds_to_middle_of_measurement' in nc.TIME.attrs:
                 SECONDS_TO_MIDDLE[index] = nc.TIME.seconds_to_middle_of_measurement
