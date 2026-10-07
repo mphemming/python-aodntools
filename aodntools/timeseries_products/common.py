@@ -199,12 +199,3 @@ def in_water(nc):
 def current_utc_timestamp(format=TIMESTAMP_FORMAT):
     return datetime.now(timezone.utc).strftime(format)
 
-
-def fixed_width_string_to_char(value, width=256):
-    """Return a fixed-width byte string as a NetCDF character array.
-
-    This is equivalent to ``netCDF4.stringtochar`` for the scalar metadata
-    strings used by the timeseries products, without relying on its handling
-    of ``numpy.bytes_`` values.
-    """
-    return np.asarray(value, dtype='S{0}'.format(width)).reshape(-1).view('S1')
